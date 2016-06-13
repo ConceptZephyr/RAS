@@ -1,0 +1,8 @@
+RHO_PRECISION           5   
+CDA_PRECISION           5   
+TIME_PRECISION          6   
+CRR_PRECISION           7   
+SLEEP_TIME              100 
+MIN_SIMPSON_RULE        3   
+MAX_SIMPSON_RULE        14  
+SIMPSON_RULE_EPSILON    5E-12
