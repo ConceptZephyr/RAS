@@ -2,8 +2,7 @@
 #define __AM_MULTI_CAST_WRITE_H__
 
 #include <netdb.h>
-
-class amString;
+#include <am_string.h>
 
 class amMulticastWrite
 {
