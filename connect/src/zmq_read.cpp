@@ -355,6 +355,13 @@ int zmqRead::zmqReadMessageBasic
     return stringLength;
 }
 
+// -------------------------------------------------------------------------------------
+//
+// zmq2stream
+//
+// Read date from the ZMQ connection and output them to a stream
+//
+// -------------------------------------------------------------------------------------
 int zmqRead::zmq2stream
 (
     std::ostream &outStream
