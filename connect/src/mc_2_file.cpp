@@ -1,3 +1,17 @@
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+//                                                                                                                                //
+// mc2file                                                                                                                        //
+//                                                                                                                                //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+//                                                                                                                                //
+// Main function that reads data from multicast on the given IP address and port and outputs them to file.                        //
+//                                                                                                                                //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
@@ -8,11 +22,10 @@
 #include <am_string.h>
 
 #include "connect_util.h"
-#include "zmq_constants.h"
-#include "zmq_version.h"
-#include "zmq_read.h"
+#include "mc_version.h"
+#include "am_multicast_read.h"
 
-const char C_PROGRAM_NAME[] = "zmq2file";
+const char C_PROGRAM_NAME[] = "mc2file";
 
 static void help
 (
@@ -21,7 +34,7 @@ static void help
 {
     std::cout << std::endl;
     std::cout << std::endl;
-    std::cout << C_PROGRAM_NAME << " reads data from the ZMQ connection with the given IP address and port number and writes them to stdout.";
+    std::cout << C_PROGRAM_NAME << " reads data from Multicast on the given IP address and port number and outputs them to file.";
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << C_PROGRAM_NAME << " takes the following arguments:";
@@ -30,21 +43,33 @@ static void help
     std::cout << std::endl;
     std::cout << "    -B <buffer_size>";
     std::cout << std::endl;
-    std::cout << "        Set the buffer size for ZMQ messages to <buffer_size>.";
+    std::cout << "        Set the buffer size for multcast messages to <buffer_size>.";
     std::cout << std::endl;
-    std::cout << "        Default: <buffer_size> = " << C_ZMQ_BUFFER_SIZE << ".";
+    std::cout << "        Default: <buffer_size> = " << C_BUFFER_SIZE << ".";
     std::cout << std::endl;
 
     std::cout << std::endl;
     std::cout << "    -b";
     std::cout << std::endl;
-    std::cout << "       Output in Build Number. Current Build Number " << AM_ZMQ_BUILD << ".";
+    std::cout << "       Output in Build Number. Current Build Number " << AM_MC_BUILD << ".";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "    -d";
+    std::cout << std::endl;
+    std::cout << "       Turn Dignostics Mode ON.";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "    -D";
+    std::cout << std::endl;
+    std::cout << "       Turn Debug Mode ON.";
     std::cout << std::endl;
 
     std::cout << std::endl;
     std::cout << "    -f <file_name>";
     std::cout << std::endl;
-    std::cout << "       Write output to file <file_name>.";
+    std::cout << "        Write output to file <file_name>.";
     std::cout << std::endl;
 
     std::cout << std::endl;
@@ -54,13 +79,17 @@ static void help
     std::cout << std::endl;
 
     std::cout << std::endl;
+    std::cout << "    -I <interface>";
+    std::cout << std::endl;
+    std::cout << "        Read on interface <interface>.";
+    std::cout << std::endl;
+    std::cout << "        Default: <interface> = \"" << C_DEFAULT_INTERFACE << "\".";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
     std::cout << "    -i <ip_address>";
     std::cout << std::endl;
     std::cout << "        Read from IP address <ip_address>.";
-    std::cout << std::endl;
-    std::cout << "        Default: <ip_address> = \"";
-    std::cout << C_DEFAULT_ZMQ_IP_ADDRESS;
-    std::cout << "\".";
     std::cout << std::endl;
 
     std::cout << std::endl;
@@ -70,44 +99,35 @@ static void help
     std::cout << std::endl;
 
     std::cout << std::endl;
-    std::cout << "    -P <pause>";
-    std::cout << std::endl;
-    std::cout << "        Pause <pause> milliseconds before starting to execute the code.";
-    std::cout << std::endl;
-    std::cout << "        Default: <pause> = " << C_PAUSE << " ms.";
-    std::cout << std::endl;
-
-    std::cout << std::endl;
     std::cout << "    -p <port_number>";
     std::cout << std::endl;
     std::cout << "        Read from port number <port_number>";
     std::cout << std::endl;
 
     std::cout << std::endl;
+    std::cout << "    -t <time_out>";
+    std::cout << std::endl;
+    std::cout << "        Timeout connection after <time_out> seconds";
+    std::cout << std::endl;
+    std::cout << "        Default: <time_out> = " << C_TIME_OUT_SEC_DEFAULT << ".";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
     std::cout << "    -v";
     std::cout << std::endl;
-    std::cout << "        Output version (short form). Current verison " << AM_ZMQ_VERSION << ".";
+    std::cout << "        Output version (short form). Current verison " << AM_MC_VERSION << ".";
     std::cout << std::endl;
 
     std::cout << std::endl;
     std::cout << "    -V";
     std::cout << std::endl;
-    std::cout << "        Output version (long form). Current verison " << AM_ZMQ_VERSION << "." << AM_ZMQ_BUILD << ".";
-    std::cout << std::endl;
-
-    std::cout << std::endl;
-    std::cout << "    -w <wait_time>";
-    std::cout << std::endl;
-    std::cout << "        Wait <wait_time> milliseconds after creating the connections.";
-    std::cout << std::endl;
-    std::cout << "        Default: <wait_time> = " << C_ZMQ_WAIT << " ms.";
+    std::cout << "        Output version (long form). Current verison " << AM_MC_VERSION << "." << AM_MC_BUILD << ".";
     std::cout << std::endl;
 
     std::cout << std::endl;
     std::cout << "    -x <exit_string>";
     std::cout << std::endl;
-    std::cout << "        Exit the program when the string <exit_string> has been read:";
-    std::cout << std::endl;
+    std::cout << "        Set the exit string to <exit_string>";
     std::cout << std::endl;
 }
 
@@ -117,26 +137,26 @@ int main
     char *argv[]
 )
 {
-    bool           running       = true;
-    bool           diagnostics   = false;
-    int            errorCode     = 0;
-    int            result        = 0;
-    int            portNo        = -1;
-    int            waitTime      = C_ZMQ_WAIT;
-    int            option        = 0;
-    int            pause         = 0;
-    size_t         zmqBufferSize = C_ZMQ_BUFFER_SIZE;
-    amString       argument      = "";
-    amString       errorMessage  = "";
-    amString       zmqExitString = "";
-    amString       ipAddress     = C_DEFAULT_ZMQ_IP_ADDRESS;
-    amString       label         = "";
-    amString       fileName      = "";
-    std::ofstream  outStream;
+    bool            running       = true;
+    bool            diagnostics   = false;
+    int             debugOut      = 0;
+    int             errorCode     = 0;
+    int             result        = 0;
+    int             portNo        = -1;
+    int             option        = 0;
+    int             bufferSize    = C_BUFFER_SIZE;
+    double          timeOut       = C_TIME_OUT_SEC_DEFAULT;
+    amString        argument      = "";
+    amString        errorMessage  = "";
+    amString        exitString    = "";
+    amString        ipAddress     = "";
+    amString        interface     = C_DEFAULT_INTERFACE;
+    amString        fileName      = "";
+    amString        label         = "";
 
     opterr = 0;
 
-    const char optionString[] = "bB:df:hi:l:p:P:vVw:x:";
+    const char optionString[] = "bB:dDhI:i:l:p:t:vVx:";
 
     while ( running && ( option = getopt( argc, argv, optionString ) ) != -1 )
     {
@@ -150,35 +170,57 @@ int main
                 }
                 else
                 {
-                    zmqBufferSize = atoi( optarg );
-                    if ( zmqBufferSize <= 0 )
+                    bufferSize = atoi( optarg );
+                    if ( bufferSize <= 0 )
                     {
                         errorCode = E_BAD_BUFFER_SIZE;
                     }
                 }
                 break;
             case 'b':
-                std::cout << AM_ZMQ_BUILD << std::endl;
+                std::cout << AM_MC_BUILD << std::endl;
                 running = false;
                 break;
             case 'd':
                 diagnostics = true;
                 break;
-            case 'f':
-                fileName = optarg;
+            case 'D':
+                debugOut = true;
                 break;
             case 'v':
-                std::cout << AM_ZMQ_VERSION << std::endl;
+                std::cout << AM_MC_VERSION << std::endl;
                 running = false;
                 break;
             case 'V':
-                std::cout << C_PROGRAM_NAME << " Version " << AM_ZMQ_VERSION << "." << AM_ZMQ_BUILD << std::endl;
+                std::cout << C_PROGRAM_NAME << " Version " << AM_MC_VERSION << "." << AM_MC_BUILD << std::endl;
                 std::cout << C_COPYRIGHT << std::endl;
                 running = false;
                 break;
             case 'h':
                 help();
                 running = false;
+                break;
+            case 'f':
+                if ( ( optarg == NULL ) || ( *optarg == 0 ) || ( *optarg == '-' ) )
+                {
+                    errorCode = E_MISSING_ARG;;
+                    argument  = argv[ optind - 1 ];
+                }
+                else
+                {
+                    fileName = optarg;
+                }
+                break;
+            case 'I':
+                if ( ( optarg == NULL ) || ( *optarg == 0 ) || ( *optarg == '-' ) )
+                {
+                    errorCode = E_MISSING_ARG;;
+                    argument  = argv[ optind - 1 ];
+                }
+                else
+                {
+                    interface = optarg;
+                }
                 break;
             case 'i':
                 if ( ( optarg == NULL ) || ( *optarg == 0 ) || ( *optarg == '-' ) )
@@ -213,7 +255,7 @@ int main
                     portNo = atoi( optarg );
                 }
                 break;
-            case 'P':
+            case 't':
                 if ( ( optarg == NULL ) || ( *optarg == 0 ) || ( *optarg == '-' ) )
                 {
                     errorCode = E_MISSING_ARG;;
@@ -221,22 +263,19 @@ int main
                 }
                 else
                 {
-                    pause = atoi( optarg );
-                    if ( pause < 0 )
-                    {
-                        errorCode = E_BAD_PAUSE_VALUE;
-                    }
-                }
-                break;
-            case 'w':
-                waitTime = atoi( optarg );
-                if ( waitTime < 0 )
-                {
-                    waitTime = 0;
+                    timeOut = atof( optarg );
                 }
                 break;
             case 'x':
-                zmqExitString = optarg;
+                if ( ( optarg == NULL ) || ( *optarg == 0 ) || ( *optarg == '-' ) )
+                {
+                    errorCode = E_MISSING_ARG;;
+                    argument  = argv[ optind - 1 ];
+                }
+                else
+                {
+                    exitString = optarg;
+                }
                 break;
             case '?':
                 errorCode = E_UNKNOWN_OPTION;
@@ -251,37 +290,41 @@ int main
         }
     }
 
-    if ( running && ( errorCode != 0 ) && fileName.empty() )
+    if ( running && ( errorCode != 0 ) )
     {
-        errorCode = E_NO_FILE_NAME;
-        running   = false;
-    }
-
-    if ( running )
-    {
-        outStream.open( fileName );
-        if ( !outStream.good() )
+        if ( fileName.empty() )
         {
-            errorCode = E_WRITE_FILE_NOT_OPEN;
-            running   = false;
+            running       = false;
+            errorCode     = E_NO_FILE_NAME;
+            errorMessage += "\nError: No file name.";
         }
     }
 
-    if ( running )
+    if ( running && ( errorCode != 0 ) )
     {
-        zmqRead zmqReader( ipAddress, portNo, waitTime );
+        std::ofstream outStream( fileName.c_str() );
+        if ( !outStream.good() )
+        {
+            errorCode     = E_WRITE_FILE_NOT_OPEN;
+            errorMessage += "\nError: Could not open file \"";
+            errorMessage += fileName;
+            errorMessage += "\" for writing.";
+        }
 
-        errorCode = zmqReader.getErrorCode();
         if ( errorCode == 0 )
         {
-            zmqReader.setZMQExitString( zmqExitString );
-            zmqReader.setDiagnostics( diagnostics );
-            zmqReader.setPause( pause );
-            zmqReader.setZMQBufferSize( zmqBufferSize );
-            zmqReader.zmq2stream( outStream );
-
-            errorCode     = zmqReader.getErrorCode();
-            errorMessage += zmqReader.getErrorMessage();
+            amMulticastRead mcReader( interface, ipAddress, portNo, timeOut );
+            errorCode = mcReader.getErrorCode();
+            if ( errorCode == 0 )
+            {
+                mcReader.setBufferSize( bufferSize );
+                mcReader.setDebugOut( debugOut );
+                mcReader.setDiagnostics( diagnostics );
+                mcReader.mc2Stream( outStream );
+                mcReader.setExitString( exitString );
+                errorCode = mcReader.getErrorCode();
+            }
+            errorMessage += mcReader.getErrorMessage();
         }
     }
 

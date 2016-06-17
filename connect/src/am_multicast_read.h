@@ -1,29 +1,55 @@
 #ifndef __AM_MULTI_CAST_READ_H__
 #define __AM_MULTI_CAST_READ_H__
 
-class amString;
+#include <am_string.h>
+#include "connect_util.h"
 
 class amMulticastRead
 {
 
     private:
 
-        int  socketID;
-        bool connectionUp;
+        bool     connectionUp;
+        bool     binary;
+        int      debugOut;
+        int      diagnostics;
+        int      socketID;
+        int      bufferSize;
+        int      errorCode;
+        amString interface;
+        amString ipAddress;
+        amString errorMessage;
+        amString exitString;
+        int      portNo;
+        int      timeOut;
 
         bool determineIPAddress( amString &ipAddress, const amString &interface );
+        void initialize( void );
 
 
     public:
 
         amMulticastRead( void );
+        amMulticastRead( const amString &curInterface, const amString &curIpAddress, int curPortNo, int curTimeOut = C_TIME_OUT_SEC_DEFAULT );
         ~amMulticastRead( void ) {};
 
         inline bool isUp( void ) const { return connectionUp; }
-        void close( void );
 
-        size_t read( unsigned char *buffer, size_t bufferSize );
-        int connect( const amString &interface, const amString &ipAddress, int portNo, int timeOutSec, amString &errorMessage );
+        inline void setBinary     ( bool value ) { binary  = value; }
+        inline void setBufferSize ( int value ) { bufferSize  = value; }
+        inline void setDebugOut   ( int value ) { debugOut    = value; }
+        inline void setDiagnostics( int value ) { diagnostics = value; }
+        inline void setExitString ( const amString &value ) { exitString = value; }
+
+        void close( void );
+        void mc2Stream( std::ostream &outStream );
+
+        size_t read( unsigned char *curBuffer, size_t curBufferSize );
+        int connect( const amString &curInterface, const amString &curIpAddress, int curPortNo, int curTimeOut = C_TIME_OUT_SEC_DEFAULT );
+        int connect( void );
+
+        inline amString getErrorMessage( void ) const { return errorMessage; }
+        inline int      getErrorCode   ( void ) const { return errorCode;    }
 
 };
 

@@ -4,11 +4,10 @@
 #include <arpa/inet.h>
 
 #include <iostream>
+#include <new>
 
-#include <am_string.h>
 #include <am_constants.h>
 
-#include "connect_util.h"
 #include "am_multicast_read.h"
 
 amMulticastRead::amMulticastRead
@@ -16,10 +15,36 @@ amMulticastRead::amMulticastRead
     void
 )
 {
-    connectionUp = false;
-    socketID      = -1;
+    timeOut = C_TIME_OUT_SEC_DEFAULT;
+    initialize();
 }
 
+amMulticastRead::amMulticastRead
+(
+    const amString &curInterface,
+    const amString &curIPAddress,
+    int             curPortNo,
+    int             curTimeOut
+) : interface( curInterface ),
+    ipAddress( curIPAddress ),
+    portNo( curPortNo ),
+    timeOut( curTimeOut )
+{
+    initialize();
+    connect();
+}
+
+void amMulticastRead::initialize
+(
+    void
+)
+{
+    connectionUp = false;
+    binary       = false;
+    socketID     = -1;
+    errorCode    = 0;
+    errorMessage = "";
+}
 
 void amMulticastRead::close
 (
@@ -39,14 +64,14 @@ void amMulticastRead::close
 
 size_t amMulticastRead::read
 (
-    BYTE   *buffer,
-    size_t  bufferSize
+    BYTE   *curBuffer,
+    size_t  curBufferSize
 )
 {
     size_t nbBytes = 0;
-    if ( connectionUp && ( socketID > 0 ) && ( bufferSize > 0 ) && ( buffer != NULL ) )
+    if ( connectionUp && ( socketID > 0 ) && ( curBufferSize > 0 ) && ( curBuffer != NULL ) )
     {
-        nbBytes = ::read( socketID, ( void * ) buffer, bufferSize );
+        nbBytes = ::read( socketID, ( void * ) curBuffer, curBufferSize );
     }
     return nbBytes;
 }
@@ -145,11 +170,37 @@ bool amMulticastRead::determineIPAddress
 
 int amMulticastRead::connect
 (
-    const amString &interface,
-    const amString &ipAddress,
-    int             portNo,
-    int             timeOutSec,
-    amString       &errorMessage
+    const amString &curInterface,
+    const amString &curIpAddress,
+    int             curPortNo,
+    int             curTimeOut
+)
+{
+    if ( connectionUp )
+    {
+        errorCode = E_ALREADY_CONNECTED;
+        errorMessage += "\namMulticastRead::connect: Already connected on interface \"";
+        errorMessage += interface;
+        errorMessage += "\" and connection \"";
+        errorMessage += ipAddress;
+        errorMessage += ":";
+        errorMessage += amString( portNo );
+        errorMessage += "\".";
+    }
+    else
+    {
+	interface = curInterface;
+	ipAddress = curIpAddress;
+        portNo    = curPortNo;
+        timeOut   = curTimeOut;
+        connect();
+    }
+    return errorCode;
+}
+
+int amMulticastRead::connect
+(
+    void
 )
 {
     char     auxErrorMessage[ C_BUFFER_SIZE ];
@@ -209,11 +260,11 @@ int amMulticastRead::connect
 
     if ( errorCode == 0 )
     {
-        if ( timeOutSec > 0 )
+        if ( timeOut > 0 )
         {
             struct timeval tv;
 
-            tv.tv_sec  = timeOutSec;
+            tv.tv_sec  = timeOut;
             tv.tv_usec = 0;  // Not init'ing this can cause strange errors
 
             int resSetSockopt = setsockopt( socketID, SOL_SOCKET, SO_RCVTIMEO, ( char * ) &tv, sizeof( struct timeval ) );
@@ -297,5 +348,38 @@ int amMulticastRead::connect
     connectionUp = ( errorCode == 0 );
 
     return errorCode;
+}
+
+void amMulticastRead::mc2Stream
+(
+    std::ostream &outStream
+)
+{
+    bool    running = true;
+    size_t  nbBytes = 0;
+    BYTE   *buffer  = NULL;
+
+    if ( bufferSize == 0 )
+    {
+        bufferSize = C_BUFFER_SIZE;
+    }
+
+    buffer = new BYTE( bufferSize );
+
+    while ( running )
+    {
+        nbBytes = read( buffer, bufferSize );
+        outStream << ( const char * ) buffer;
+        if ( !binary )
+        {
+            outStream << std::endl;
+        }
+        if ( exitString == ( const char * ) buffer )
+        {
+            running = false;
+        }
+    }
+    delete[] buffer;
+    buffer = NULL;
 }
 

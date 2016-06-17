@@ -5,9 +5,14 @@
 
 enum amTimeStampMode{ KEEP_AS_IS, OVERWRITE, APPEND };
 
+#define C_AUTO_INTERFACE "auto"
+
+const char C_DEFAULT_INTERFACE[]       = C_AUTO_INTERFACE;
+
 const int  C_ZMQ_WAIT                  =   500;
 const int  C_PAUSE                     =     0;
 const int  C_MAX_PORT_NUMBER           = 65535;
+const int  C_TIME_OUT_SEC_DEFAULT      =     0;
 
 const int E_BAD_NUMBER_OF_SUBADDRESSES = 50001;
 const int E_BAD_SUBADDRESS             = 50002;

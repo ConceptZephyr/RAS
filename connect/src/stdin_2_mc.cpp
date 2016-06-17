@@ -254,8 +254,6 @@ int main
     if ( running )
     {
         amMulticastWrite mcWriter( ipAddress, portNo );
-        int connect( const amString &ipAddress, int portNo );
-
         errorCode = mcWriter.getErrorCode();
         if ( errorCode == 0 )
         {
