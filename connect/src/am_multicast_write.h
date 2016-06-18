@@ -15,6 +15,7 @@ class amMulticastWrite
         int                bufferSize;
         int                socketID;
         bool               connectionUp;
+        bool               outputExitString;
         struct sockaddr_in groupSock;
         amString           ipAddress;
         int                portNo;
@@ -41,6 +42,7 @@ class amMulticastWrite
         inline void setPause      ( int value ) { pause = value; }
         inline void setBufferSize ( int value ) { bufferSize = value; }
         inline void setDiagnostics( int value ) { diagnostics = value; }
+        inline void setOutputExitString( bool value ) { outputExitString = value; }
         inline void setExitString ( const amString &value ) { exitString = value; }
 
         void   close( void );

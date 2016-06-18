@@ -41,12 +41,15 @@ void zmqRead::initialize
     void
 )
 {
-    connectionUp  = false;
-    errorCode     = 0;
-    pause         = C_PAUSE;
-    zmqBufferSize = C_ZMQ_BUFFER_SIZE;
-    ctxPtr        = new zmq::context_t( 1 );
-    zmqSocketPtr  = new zmq::socket_t( *ctxPtr, ZMQ_SUB );
+    connectionUp     = false;
+    outputExitString = false;
+    errorCode        = 0;
+    debugOutput      = 0;
+    pause            = C_PAUSE;
+    zmqBufferSize    = C_ZMQ_BUFFER_SIZE;
+    ctxPtr           = new zmq::context_t( 1 );
+    zmqSocketPtr     = new zmq::socket_t( *ctxPtr, ZMQ_SUB );
+    exitString.clear();
     errorMessage.clear();
 }
 
@@ -387,16 +390,25 @@ int zmqRead::zmq2stream
             stringLength = zmqReadMessageBasic( buffer, bufferSize, errorMessage );
             if ( stringLength > 0 )
             {
-                if ( ( zmqExitString.size() > 0 ) && ( zmqExitString == buffer ) )
+                if ( debugOutput > 1 )
+                {
+                    std::cerr << "READ: \"" << buffer << "\"" << std::endl;
+                }
+                if ( ( exitString.size() > 0 ) && ( exitString == buffer ) )
                 {
                     running = false;
                 }
-                else
+                if ( running || outputExitString )
                 {
                     outStream << buffer << std::endl;
                 }
             }
         }
+    }
+
+    if ( debugOutput > 1 )
+    {
+        std::cerr << "EXIT" << std::endl;
     }
     return errorCode;
 }

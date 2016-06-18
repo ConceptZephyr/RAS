@@ -2,10 +2,9 @@
 #define __CONNECT_UTIL_H__
 
 #include <am_string.h>
+#include <am_constants.h>
 
 enum amTimeStampMode{ KEEP_AS_IS, OVERWRITE, APPEND };
-
-#define C_AUTO_INTERFACE "auto"
 
 const char C_DEFAULT_INTERFACE[]       = C_AUTO_INTERFACE;
 

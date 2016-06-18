@@ -65,8 +65,6 @@ int outputConnectError
 )
 {
     amString finalErrorMessage = errorMessage;
-std::cerr << "errorCode = " << errorCode << std::endl;
-std::cerr << "errorMessage = " << errorMessage << std::endl;
     switch ( errorCode )
     {
         case E_BAD_NUMBER_OF_SUBADDRESSES:
@@ -184,12 +182,13 @@ std::cerr << "errorMessage = " << errorMessage << std::endl;
     if ( errorCode != 0 )
     {
         std::cerr << std::endl << "ERROR " << finalErrorMessage << " (" << errorCode << ")." << std::endl;
+        std::cerr << std::endl;
     }
     else if ( finalErrorMessage.size() > 0 )
     {
         std::cerr << std::endl << "WARNING " << finalErrorMessage << " (" << errorCode << ")." << std::endl;
+        std::cerr << std::endl;
     }
-    std::cerr << std::endl;
 
     return errorCode;
 }

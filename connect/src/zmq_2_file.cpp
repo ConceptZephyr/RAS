@@ -1,3 +1,17 @@
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+//                                                                                                                                //
+// zmq2file                                                                                                                       //
+//                                                                                                                                //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+//                                                                                                                                //
+// Main function that reads data from ZMQ on the given IP address and port and outputs them to file.                              //
+//                                                                                                                                //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------------------ //
+
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
@@ -6,6 +20,7 @@
 
 #include <am_constants.h>
 #include <am_string.h>
+#include <am_util.h>
 
 #include "connect_util.h"
 #include "zmq_constants.h"
@@ -39,6 +54,18 @@ static void help
     std::cout << "    -b";
     std::cout << std::endl;
     std::cout << "       Output in Build Number. Current Build Number " << AM_ZMQ_BUILD << ".";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "    -d";
+    std::cout << std::endl;
+    std::cout << "       Run in diagnostics mode.";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "    -D";
+    std::cout << std::endl;
+    std::cout << "       Increase debug level. Accumuative.";
     std::cout << std::endl;
 
     std::cout << std::endl;
@@ -104,6 +131,12 @@ static void help
     std::cout << std::endl;
 
     std::cout << std::endl;
+    std::cout << "    -X";
+    std::cout << std::endl;
+    std::cout << "        Output exit string (if defined)";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
     std::cout << "    -x <exit_string>";
     std::cout << std::endl;
     std::cout << "        Exit the program when the string <exit_string> has been read:";
@@ -117,26 +150,28 @@ int main
     char *argv[]
 )
 {
-    bool           running       = true;
-    bool           diagnostics   = false;
-    int            errorCode     = 0;
-    int            result        = 0;
-    int            portNo        = -1;
-    int            waitTime      = C_ZMQ_WAIT;
-    int            option        = 0;
-    int            pause         = 0;
-    size_t         zmqBufferSize = C_ZMQ_BUFFER_SIZE;
-    amString       argument      = "";
-    amString       errorMessage  = "";
-    amString       zmqExitString = "";
-    amString       ipAddress     = C_DEFAULT_ZMQ_IP_ADDRESS;
-    amString       label         = "";
-    amString       fileName      = "";
-    std::ofstream  outStream;
+    bool          running          = true;
+    bool          diagnostics      = false;
+    bool          outputExitString = false;
+    int           errorCode        = 0;
+    int           debugLevel       = 0;
+    int           result           = 0;
+    int           portNo           = -1;
+    int           waitTime         = C_ZMQ_WAIT;
+    int           option           = 0;
+    int           pause            = 0;
+    size_t        zmqBufferSize    = C_ZMQ_BUFFER_SIZE;
+    amString      argument         = "";
+    amString      errorMessage     = "";
+    amString      exitString       = "";
+    amString      ipAddress        = C_DEFAULT_ZMQ_IP_ADDRESS;
+    amString      label            = "";
+    amString      fileName         = "";
+    std::ofstream outStream;
 
     opterr = 0;
 
-    const char optionString[] = "bB:df:hi:l:p:P:vVw:x:";
+    const char optionString[] = "bB:Ddf:hi:l:p:P:vVw:Xx:";
 
     while ( running && ( option = getopt( argc, argv, optionString ) ) != -1 )
     {
@@ -160,6 +195,9 @@ int main
             case 'b':
                 std::cout << AM_ZMQ_BUILD << std::endl;
                 running = false;
+                break;
+            case 'D':
+                debugLevel++;
                 break;
             case 'd':
                 diagnostics = true;
@@ -235,8 +273,11 @@ int main
                     waitTime = 0;
                 }
                 break;
+            case 'X':
+                outputExitString = true;
+                break;
             case 'x':
-                zmqExitString = optarg;
+                exitString = optarg;
                 break;
             case '?':
                 errorCode = E_UNKNOWN_OPTION;
@@ -251,13 +292,13 @@ int main
         }
     }
 
-    if ( running && ( errorCode != 0 ) && fileName.empty() )
+    if ( running && ( errorCode == 0 ) && fileName.empty() )
     {
         errorCode = E_NO_FILE_NAME;
         running   = false;
     }
 
-    if ( running )
+    if ( running && ( errorCode == 0 ) )
     {
         outStream.open( fileName );
         if ( !outStream.good() )
@@ -267,23 +308,56 @@ int main
         }
     }
 
-    if ( running )
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( ipAddress.empty() )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: No IP Address.\n";
+        }
+        else if ( !isIPAddress( ipAddress ) )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: IP Address \"";
+            errorMessage += ipAddress;
+            errorMessage += "\" is not a valid IP Address.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( !isPortNumber( portNo ) )
+        {
+            errorCode = E_MC_NO_PORT_NUMBER;
+            errorMessage += "\nError: No valid port number.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
     {
         zmqRead zmqReader( ipAddress, portNo, waitTime );
 
         errorCode = zmqReader.getErrorCode();
         if ( errorCode == 0 )
         {
-            zmqReader.setZMQExitString( zmqExitString );
+            if ( exitString.size() > 0 )
+            {
+                zmqReader.setExitString( exitString );
+                zmqReader.setOutputExitString( outputExitString );
+            }
+            zmqReader.setDebugOutput( debugLevel );
             zmqReader.setDiagnostics( diagnostics );
             zmqReader.setPause( pause );
             zmqReader.setZMQBufferSize( zmqBufferSize );
+
             zmqReader.zmq2stream( outStream );
 
-            errorCode     = zmqReader.getErrorCode();
-            errorMessage += zmqReader.getErrorMessage();
+            errorCode = zmqReader.getErrorCode();
         }
+        errorMessage += zmqReader.getErrorMessage();
     }
+
+    outStream.close();
 
     result = outputConnectError( C_PROGRAM_NAME, errorMessage, errorCode, argument );
 

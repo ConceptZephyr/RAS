@@ -11,6 +11,7 @@ class amMulticastRead
 
         bool     connectionUp;
         bool     binary;
+        bool     outputExitString;
         int      debugOut;
         int      diagnostics;
         int      socketID;
@@ -35,11 +36,12 @@ class amMulticastRead
 
         inline bool isUp( void ) const { return connectionUp; }
 
-        inline void setBinary     ( bool value ) { binary  = value; }
-        inline void setBufferSize ( int value ) { bufferSize  = value; }
-        inline void setDebugOut   ( int value ) { debugOut    = value; }
-        inline void setDiagnostics( int value ) { diagnostics = value; }
-        inline void setExitString ( const amString &value ) { exitString = value; }
+        inline void setBinary          ( bool value ) { binary           = value; }
+        inline void setOutputExitString( bool value ) { outputExitString = value; }
+        inline void setBufferSize      ( int  value ) { bufferSize       = value; }
+        inline void setDebugOut        ( int  value ) { debugOut         = value; }
+        inline void setDiagnostics     ( int  value ) { diagnostics      = value; }
+        inline void setExitString      ( const amString &value ) { exitString = value; }
 
         void close( void );
         void mc2Stream( std::ostream &outStream );

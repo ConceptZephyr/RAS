@@ -20,6 +20,7 @@
 
 #include <am_constants.h>
 #include <am_string.h>
+#include <am_util.h>
 
 #include "connect_util.h"
 #include "mc_version.h"
@@ -125,6 +126,12 @@ static void help
     std::cout << std::endl;
 
     std::cout << std::endl;
+    std::cout << "    -X";
+    std::cout << std::endl;
+    std::cout << "        Output exit string (if defined)";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
     std::cout << "    -x <exit_string>";
     std::cout << std::endl;
     std::cout << "        Set the exit string to <exit_string>";
@@ -137,26 +144,27 @@ int main
     char *argv[]
 )
 {
-    bool            running       = true;
-    bool            diagnostics   = false;
-    int             debugOut      = 0;
-    int             errorCode     = 0;
-    int             result        = 0;
-    int             portNo        = -1;
-    int             option        = 0;
-    int             bufferSize    = C_BUFFER_SIZE;
-    double          timeOut       = C_TIME_OUT_SEC_DEFAULT;
-    amString        argument      = "";
-    amString        errorMessage  = "";
-    amString        exitString    = "";
-    amString        ipAddress     = "";
-    amString        interface     = C_DEFAULT_INTERFACE;
-    amString        fileName      = "";
-    amString        label         = "";
+    bool     running          = true;
+    bool     diagnostics      = false;
+    bool     outputExitString = false;
+    int      debugOut         = 0;
+    int      errorCode        = 0;
+    int      result           = 0;
+    int      portNo           = -1;
+    int      option           = 0;
+    int      bufferSize       = C_BUFFER_SIZE;
+    double   timeOut          = C_TIME_OUT_SEC_DEFAULT;
+    amString argument         = "";
+    amString errorMessage     = "";
+    amString exitString       = "";
+    amString ipAddress        = "";
+    amString interface        = C_DEFAULT_INTERFACE;
+    amString fileName         = "";
+    amString label            = "";
 
     opterr = 0;
 
-    const char optionString[] = "bB:dDhI:i:l:p:t:vVx:";
+    const char optionString[] = "bB:dDf:hI:i:l:p:t:vVXx:";
 
     while ( running && ( option = getopt( argc, argv, optionString ) ) != -1 )
     {
@@ -266,6 +274,9 @@ int main
                     timeOut = atof( optarg );
                 }
                 break;
+            case 'X':
+                outputExitString = true;
+                break;
             case 'x':
                 if ( ( optarg == NULL ) || ( *optarg == 0 ) || ( *optarg == '-' ) )
                 {
@@ -290,17 +301,56 @@ int main
         }
     }
 
-    if ( running && ( errorCode != 0 ) )
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( !isInterface( interface ) )
+        {
+            errorCode = E_MC_NO_INTERFACE;
+            errorMessage += "\nError: Invalid interface.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( ipAddress.empty() )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: No IP Address.\n";
+        }
+        else if ( !isMulticastIPAddress( ipAddress ) )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: IP Address \"";
+            errorMessage += ipAddress;
+            errorMessage += "\" is not a valid ";
+            if ( isIPAddress( ipAddress ) )
+            {
+                errorMessage += "multicast ";
+            }
+            errorMessage += "IP Address.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( !isPortNumber( portNo ) )
+        {
+            errorCode = E_MC_NO_PORT_NUMBER;
+            errorMessage += "\nError: No valid port number.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
     {
         if ( fileName.empty() )
         {
             running       = false;
             errorCode     = E_NO_FILE_NAME;
-            errorMessage += "\nError: No file name.";
+            errorMessage += "\nError: No file name.\n";
         }
     }
 
-    if ( running && ( errorCode != 0 ) )
+    if ( running && ( errorCode == 0 ) )
     {
         std::ofstream outStream( fileName.c_str() );
         if ( !outStream.good() )
@@ -308,7 +358,7 @@ int main
             errorCode     = E_WRITE_FILE_NOT_OPEN;
             errorMessage += "\nError: Could not open file \"";
             errorMessage += fileName;
-            errorMessage += "\" for writing.";
+            errorMessage += "\" for writing.\n";
         }
 
         if ( errorCode == 0 )
@@ -317,11 +367,17 @@ int main
             errorCode = mcReader.getErrorCode();
             if ( errorCode == 0 )
             {
+                if ( exitString.size() > 0 )
+                {
+                    mcReader.setExitString( exitString );
+                    mcReader.setOutputExitString( outputExitString );
+                }
                 mcReader.setBufferSize( bufferSize );
                 mcReader.setDebugOut( debugOut );
                 mcReader.setDiagnostics( diagnostics );
+
                 mcReader.mc2Stream( outStream );
-                mcReader.setExitString( exitString );
+
                 errorCode = mcReader.getErrorCode();
             }
             errorMessage += mcReader.getErrorMessage();

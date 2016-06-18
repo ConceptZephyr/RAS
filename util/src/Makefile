@@ -9,7 +9,6 @@ ARCHIVE=/usr/bin/ar r
 
 REMOVE=/bin/rm -f
 MOVE=/bin/mv
-COPY=/bin/cp
 LINK=ln -s
 MAKE=/usr/bin/make
 
@@ -21,17 +20,24 @@ STATIC_LIB=libutil.a
 SHARED_LIB=libutil.dylib
 CURRENT_VERSION=1.0
 
+TARGET_STATIC_LIB=$(LIB_DIR)/$(STATIC_LIB)
+
 %.o: %.c %.h Makefile
 
 .cpp.o: $(COMMON_HEADERS) Makefile
 	$(CC) $(INCFLAGS) $(CFLAGS) $< -o $@
 
-all: $(STATIC_LIB)
+all: $(TARGET_STATIC_LIB)
+
+$(TARGET_STATIC_LIB): $(SOURCES) $(HEADERS)
+	$(CC) $(INCFLAGS) $(CFLAGS_STATIC) $(SOURCES)
+	$(ARCHIVE) $(STATIC_LIB) $(OBJECTS)
+	$(MOVE) $(STATIC_LIB) $(LIB_DIR)
 
 $(STATIC_LIB): $(SOURCES) $(HEADERS)
 	$(CC) $(INCFLAGS) $(CFLAGS_STATIC) $(SOURCES)
 	$(ARCHIVE) $(STATIC_LIB) $(OBJECTS)
-	$(COPY) $(STATIC_LIB) $(LIB_DIR)
+	$(MOVE) $(STATIC_LIB) $(LIB_DIR)
 
 shared:
 	$(REMOVE) $(OBJECTS)
@@ -52,8 +58,8 @@ rebuild:
 
 install:
 	make all
-	$(COPY) $(STATIC_LIB) $(LIB_DIR)
-#	$(COPY) $(SHARED_LIB).$(CURRENT_VERSION) $(LIB_DIR); cd $(LIB_DIR); $(REMOVE) $(SHARED_LIB); $(LINK) $(SHARED_LIB).$(CURRENT_VERSION) $(SHARED_LIB)
+	$(MOVE) $(STATIC_LIB) $(LIB_DIR)
+#	$(MOVE) $(SHARED_LIB).$(CURRENT_VERSION) $(LIB_DIR); cd $(LIB_DIR); $(REMOVE) $(SHARED_LIB); $(LINK) $(SHARED_LIB).$(CURRENT_VERSION) $(SHARED_LIB)
 
 install_clean:
 	make all

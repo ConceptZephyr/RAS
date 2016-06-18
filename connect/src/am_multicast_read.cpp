@@ -7,6 +7,7 @@
 #include <new>
 
 #include <am_constants.h>
+#include <am_util.h>
 
 #include "am_multicast_read.h"
 
@@ -39,11 +40,12 @@ void amMulticastRead::initialize
     void
 )
 {
-    connectionUp = false;
-    binary       = false;
-    socketID     = -1;
-    errorCode    = 0;
-    errorMessage = "";
+    connectionUp     = false;
+    outputExitString = false;
+    binary           = false;
+    socketID         = -1;
+    errorCode        = 0;
+    errorMessage     = "";
 }
 
 void amMulticastRead::close
@@ -71,6 +73,7 @@ size_t amMulticastRead::read
     size_t nbBytes = 0;
     if ( connectionUp && ( socketID > 0 ) && ( curBufferSize > 0 ) && ( curBuffer != NULL ) )
     {
+        bzero( curBuffer, curBufferSize );
         nbBytes = ::read( socketID, ( void * ) curBuffer, curBufferSize );
     }
     return nbBytes;
@@ -209,22 +212,25 @@ int amMulticastRead::connect
     struct   ip_mreq     group;
     amString localIPAddress;
 
-    if ( interface.empty() )
-    {
+    if ( !isInterface( interface ) )
+    {   
         errorCode     = E_MC_NO_INTERFACE;
         errorMessage += "Creating multicast connection for reading failed. No Interface.\n";
-    }
-    else if ( ipAddress.empty() )
-    {
+    }   
+
+    if ( ( errorCode == 0 ) && !isMulticastIPAddress( ipAddress ) )
+    {   
         errorCode     = E_MC_NO_IP_ADDRESS;
-        errorMessage += "Creating multicast connection for reading failed. No IP Address.\n";
-    }
-    else if ( portNo <= 0 )
-    {
+        errorMessage += "Creating multicast connection for writing failed. No IP Address.\n";
+    }   
+
+    if ( ( errorCode == 0 ) && !isPortNumber( portNo ) )
+    {   
         errorCode     = E_MC_NO_PORT_NUMBER;
-        errorMessage += "Creating multicast connection for reading failed. No Port Number.\n";
-    }
-    else
+        errorMessage += "Creating multicast connection for writing failed. No Port Number.\n";
+    }   
+
+    if ( errorCode == 0 )
     {
         // Create a datagram socket on which to receive.
         socketID = socket( AF_INET, SOCK_DGRAM, 0 );
@@ -369,14 +375,17 @@ void amMulticastRead::mc2Stream
     while ( running )
     {
         nbBytes = read( buffer, bufferSize );
-        outStream << ( const char * ) buffer;
-        if ( !binary )
-        {
-            outStream << std::endl;
-        }
         if ( exitString == ( const char * ) buffer )
         {
             running = false;
+        }
+        if ( running || outputExitString )
+        {
+            outStream << ( const char * ) buffer;
+            if ( !binary )
+            {
+                outStream << std::endl;
+            }
         }
     }
     delete[] buffer;

@@ -1,6 +1,10 @@
 #ifndef __AM_CONSTANTS_H__
 #define __AM_CONSTANTS_H__
 
+#define __MAC_OS__
+#define C_AUTO_INTERFACE "auto"
+
+
 #include <stdlib.h>
 
 const char C_VERSION[]           = "1.0.1";

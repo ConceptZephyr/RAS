@@ -1,0 +1,134 @@
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:../lib
+
+BIN_DIR=../../bin
+
+DATA_DIRECTORY=test
+TEST_FILE=${DATA_DIRECTORY}/testfile.ant
+DEVICE_FILE=${DATA_DIRECTORY}/deviceIDs
+
+AERO_EXEC=${BIN_DIR}/aero_ant2txt
+AUDIO_EXEC=${BIN_DIR}/audio_ant2txt
+BLOOD_EXEC=${BIN_DIR}/blood_pressure_ant2txt
+B2T_EXEC=${BIN_DIR}/bridge2txt
+CAD_EXEC=${BIN_DIR}/cadence_only_ant2txt
+ENV_EXEC=${BIN_DIR}/environment_ant2txt
+HRM_EXEC=${BIN_DIR}/hrm_ant2txt
+MULTI_EXEC=${BIN_DIR}/multi_sport_speed_dist_ant2txt
+POWER_EXEC=${BIN_DIR}/power_ant2txt
+SPCAD_EXEC=${BIN_DIR}/spcad_ant2txt
+SPEED_EXEC=${BIN_DIR}/speed_only_ant2txt
+STRIDE_EXEC=${BIN_DIR}/stride_speed_dist_ant2txt
+WEIGHT_EXEC=${BIN_DIR}/weight_ant2txt
+
+echo ""
+echo "------------------------------------------------------"
+echo ""
+echo "Semi-Cooked"
+sleep 1
+OPTIONS="-f ${TEST_FILE} -x -S"
+TEST_TYPE="TestSemi.txt"
+${AERO_EXEC}   ${OPTIONS} > ${DATA_DIRECTORY}/aero${TEST_TYPE}
+${AUDIO_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/audio${TEST_TYPE}
+${BLOOD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/blood${TEST_TYPE}
+${B2T_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/all${TEST_TYPE}
+${CAD_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/cad${TEST_TYPE}
+${ENV_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/env${TEST_TYPE}
+${HRM_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/hrm${TEST_TYPE}
+${MULTI_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/multi${TEST_TYPE}
+${POWER_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/power${TEST_TYPE}
+${SPCAD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/spcad${TEST_TYPE}
+${SPEED_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/speedOnly${TEST_TYPE}
+${STRIDE_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/stride${TEST_TYPE}
+${WEIGHT_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/weight${TEST_TYPE}
+
+echo ""
+echo "------------------------------------------------------"
+echo ""
+echo "Fully Cooked"
+sleep 1
+OPTIONS="-f ${TEST_FILE} -x"
+TEST_TYPE="TestFully.txt"
+${AERO_EXEC}   ${OPTIONS} > ${DATA_DIRECTORY}/aero${TEST_TYPE}
+${AUDIO_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/audio${TEST_TYPE}
+${BLOOD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/blood${TEST_TYPE}
+${B2T_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/all${TEST_TYPE}
+${CAD_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/cad${TEST_TYPE}
+${ENV_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/env${TEST_TYPE}
+${HRM_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/hrm${TEST_TYPE}
+${MULTI_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/multi${TEST_TYPE}
+${POWER_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/power${TEST_TYPE}
+${SPCAD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/spcad${TEST_TYPE}
+${SPEED_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/speedOnly${TEST_TYPE}
+${STRIDE_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/stride${TEST_TYPE}
+${WEIGHT_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/weight${TEST_TYPE}
+
+echo ""
+echo "------------------------------------------------------"
+echo ""
+echo "Semi-Cooked JSON"
+sleep 1
+OPTIONS="-f ${TEST_FILE} -x -S -J"
+TEST_TYPE="TestSemiJSON.txt"
+${AERO_EXEC}   ${OPTIONS} > ${DATA_DIRECTORY}/aero${TEST_TYPE}
+${AUDIO_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/audio${TEST_TYPE}
+${BLOOD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/blood${TEST_TYPE}
+${B2T_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/all${TEST_TYPE}
+${CAD_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/cad${TEST_TYPE}
+${ENV_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/env${TEST_TYPE}
+${HRM_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/hrm${TEST_TYPE}
+${MULTI_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/multi${TEST_TYPE}
+${POWER_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/power${TEST_TYPE}
+${SPCAD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/spcad${TEST_TYPE}
+${SPEED_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/speedOnly${TEST_TYPE}
+${STRIDE_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/stride${TEST_TYPE}
+${WEIGHT_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/weight${TEST_TYPE}
+
+echo ""
+echo "------------------------------------------------------"
+echo ""
+echo "Fully Cooked JSON"
+sleep 1
+OPTIONS="-f ${TEST_FILE} -x -J"
+TEST_TYPE="TestFullyJSON.txt"
+${AERO_EXEC}   ${OPTIONS} > ${DATA_DIRECTORY}/aero${TEST_TYPE}
+${AUDIO_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/audio${TEST_TYPE}
+${BLOOD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/blood${TEST_TYPE}
+${B2T_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/all${TEST_TYPE}
+${CAD_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/cad${TEST_TYPE}
+${ENV_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/env${TEST_TYPE}
+${HRM_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/hrm${TEST_TYPE}
+${MULTI_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/multi${TEST_TYPE}
+${POWER_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/power${TEST_TYPE}
+${SPCAD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/spcad${TEST_TYPE}
+${SPEED_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/speedOnly${TEST_TYPE}
+${STRIDE_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/stride${TEST_TYPE}
+${WEIGHT_EXEC} ${OPTIONS} > ${DATA_DIRECTORY}/weight${TEST_TYPE}
+
+echo ""
+echo "------------------------------------------------------"
+echo ""
+echo "Fully Cooked with Parameters"
+sleep 1
+OPTIONS="-f ${TEST_FILE} -x -d ${DEVICE_FILE}"
+TEST_TYPE="TestParametersFully.txt"
+${AERO_EXEC}   ${OPTIONS} > ${DATA_DIRECTORY}/aero${TEST_TYPE}
+${B2T_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/all${TEST_TYPE}
+${CAD_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/cad${TEST_TYPE}
+${POWER_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/power${TEST_TYPE}
+${SPCAD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/spcad${TEST_TYPE}
+${SPEED_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/speedOnly${TEST_TYPE}
+
+echo ""
+echo "------------------------------------------------------"
+echo ""
+echo "Fully Cooked JSON with Parameters"
+sleep 1
+OPTIONS="-f ${TEST_FILE} -x -J -d ${DEVICE_FILE}"
+TEST_TYPE="TestParametersFullyJSON.txt"
+${AERO_EXEC}   ${OPTIONS} > ${DATA_DIRECTORY}/aero${TEST_TYPE}
+${B2T_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/all${TEST_TYPE}
+${CAD_EXEC}    ${OPTIONS} > ${DATA_DIRECTORY}/cad${TEST_TYPE}
+${POWER_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/power${TEST_TYPE}
+${SPCAD_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/spcad${TEST_TYPE}
+${SPEED_EXEC}  ${OPTIONS} > ${DATA_DIRECTORY}/speedOnly${TEST_TYPE}
+

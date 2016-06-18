@@ -19,6 +19,7 @@
 
 #include <am_constants.h>
 #include <am_string.h>
+#include <am_util.h>
 
 #include "connect_util.h"
 #include "mc_version.h"
@@ -110,6 +111,12 @@ static void help
     std::cout << std::endl;
 
     std::cout << std::endl;
+    std::cout << "    -X";
+    std::cout << std::endl;
+    std::cout << "        Output exit string (if defined)";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
     std::cout << "    -x <exit_string>";
     std::cout << std::endl;
     std::cout << "        Set the exit string to <exit_string>";
@@ -122,24 +129,25 @@ int main
     char *argv[]
 )
 {
-    bool            running       = true;
-    bool            diagnostics   = false;
-    int             debugOut      = 0;
-    int             pause         = C_PAUSE;
-    int             errorCode     = 0;
-    int             result        = 0;
-    int             portNo        = -1;
-    int             option        = 0;
-    size_t          bufferSize    = C_BUFFER_SIZE;
-    amString        argument      = "";
-    amString        errorMessage  = "";
-    amString        exitString    = "";
-    amString        ipAddress     = "";
-    amString        label         = "";
+    bool     running          = true;
+    bool     diagnostics      = false;
+    bool     outputExitString = false;
+    int      debugOut         = 0;
+    int      pause            = C_PAUSE;
+    int      errorCode        = 0;
+    int      result           = 0;
+    int      portNo           = -1;
+    int      option           = 0;
+    size_t   bufferSize       = C_BUFFER_SIZE;
+    amString argument         = "";
+    amString errorMessage     = "";
+    amString exitString       = "";
+    amString ipAddress        = "";
+    amString label            = "";
 
     opterr = 0;
 
-    const char optionString[] = "bB:dDhi:l:p:P:vVx:";
+    const char optionString[] = "bB:dDhi:l:p:P:vVXx:";
 
     while ( running && ( option = getopt( argc, argv, optionString ) ) != -1 )
     {
@@ -227,6 +235,9 @@ int main
                     portNo = atoi( optarg );
                 }
                 break;
+            case 'X':
+                outputExitString = true;
+                break;
             case 'x':
                 if ( ( optarg == NULL ) || ( *optarg == 0 ) || ( *optarg == '-' ) )
                 {
@@ -251,22 +262,57 @@ int main
         }
     }
 
-    if ( running )
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( ipAddress.empty() )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: No IP Address.\n";
+        }
+        else if ( !isMulticastIPAddress( ipAddress ) )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: IP Address \"";
+            errorMessage += ipAddress;
+            errorMessage += "\" is not a valid ";
+            if ( isIPAddress( ipAddress ) )
+            {
+                errorMessage += "multicast ";
+            }
+            errorMessage += "IP Address.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( !isPortNumber( portNo ) )
+        {
+            errorCode = E_MC_NO_PORT_NUMBER;
+            errorMessage += "\nError: No valid port number.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
     {
         amMulticastWrite mcWriter( ipAddress, portNo );
         errorCode = mcWriter.getErrorCode();
         if ( errorCode == 0 )
         {
+            if ( exitString.size() > 0 )
+            {
+                mcWriter.setExitString( exitString );
+                mcWriter.setOutputExitString( outputExitString );
+            }
             mcWriter.setDebugOut( debugOut );
             mcWriter.setPause( pause );
             mcWriter.setBufferSize( bufferSize );
             mcWriter.setDiagnostics( diagnostics );
-            mcWriter.stream2mc( std::cin );
-            mcWriter.setExitString( exitString );
 
-            errorMessage += mcWriter.getErrorMessage();
-            errorCode     = mcWriter.getErrorCode();
+            mcWriter.stream2mc( std::cin );
+
+            errorCode = mcWriter.getErrorCode();
         }
+        errorMessage += mcWriter.getErrorMessage();
     }
 
     result = outputConnectError( C_PROGRAM_NAME, errorMessage, errorCode, argument );

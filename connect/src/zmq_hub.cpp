@@ -154,7 +154,7 @@ int main
     size_t          zmqBufferSize = C_ZMQ_BUFFER_SIZE;
     amString        argument      = "";
     amString        errorMessage  = "";
-    amString        zmqExitString = "";
+    amString        exitString    = "";
 
     std::vector<amString> inIPAddress;
     std::vector<amString> label;
@@ -307,7 +307,7 @@ int main
                 }
                 break;
             case 'x':
-                zmqExitString = optarg;
+                exitString = optarg;
                 break;
             case '?':
                 errorCode = E_UNKNOWN_OPTION;
@@ -395,7 +395,7 @@ int main
         if ( hub.getErrorCode() == 0 )
         {
             hub.setTimeStampMode( timeStampMode );
-            hub.setZMQExitString( zmqExitString );
+            hub.setExitString( exitString );
             hub.setDiagnostics( diagnostics );
             hub.setPause( pause );
             hub.setTimePrecision( timePrecision );

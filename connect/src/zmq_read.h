@@ -25,8 +25,9 @@ class zmqRead
         int zmqClose( void );
         int zmq2stream( std::ostream &outStream );
 
-        void setZMQExitString( const amString &value ) { zmqExitString = value; }
-        amString getZMQExitString( void ) const { return zmqExitString; }
+        void setOutputExitString( bool value ) { outputExitString = value; }
+        void setExitString( const amString &value ) { exitString = value; }
+        amString getExitString( void ) const { return exitString; }
 
         void setErrorCode( int value ) { errorCode = value; }
         int getErrorCode( void ) const { return errorCode; }
@@ -36,6 +37,9 @@ class zmqRead
 
         void setPause( int value ) { pause = value; }
         int getPause( void ) const { return pause; }
+
+        void setDebugOutput( int value ) { debugOutput = value; }
+        int getDebugOutput( void ) const { return debugOutput; }
 
         void setDiagnostics( bool value ) { diagnostics = value; }
         bool getDiagnostics( void ) const { return diagnostics; }
@@ -51,11 +55,13 @@ class zmqRead
         zmq::socket_t  *zmqSocketPtr;
         zmq::context_t *ctxPtr;
 
-        amString zmqExitString;
+        amString exitString;
         amString errorMessage;
         bool     diagnostics;
         bool     connectionUp;
+        bool     outputExitString;
         int      errorCode;
+        int      debugOutput;
         int      pause;
         size_t   zmqBufferSize;
 

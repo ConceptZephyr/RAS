@@ -55,14 +55,15 @@ void zmqWrite::initialize
     void
 )
 {
-    connectionUp  = false;
-    debugOut      = false;
-    errorCode     = 0;
-    pause         = C_PAUSE;
-    zmqBufferSize = C_ZMQ_BUFFER_SIZE;
-    timePrecision = C_TIME_PRECISION;
-    ctxPtr        = new zmq::context_t( 1 );
-    zmqSocketPtr  = new zmq::socket_t( *ctxPtr, ZMQ_PUB );
+    connectionUp     = false;
+    debugOut         = false;
+    errorCode        = 0;
+    pause            = C_PAUSE;
+    zmqBufferSize    = C_ZMQ_BUFFER_SIZE;
+    timePrecision    = C_TIME_PRECISION;
+    outputExitString = false;
+    ctxPtr           = new zmq::context_t( 1 );
+    zmqSocketPtr     = new zmq::socket_t( *ctxPtr, ZMQ_PUB );
     errorMessage.clear();
 }
 
@@ -438,10 +439,25 @@ int zmqWrite::stream2zmq
             if ( inStream.eof() || inStream.fail() )
             {
                 running = false;
+                if ( ( exitString.size() > 0 ) && outputExitString )
+                {
+                    try
+                    {
+                        zmqWriteMessage( exitString );
+                    }
+                    catch ( zmq::error_t &e )
+                    {
+                        running = false;
+                    }
+                }
             }
             else
             {
                 std::getline( inStream, message );
+                if ( ( debugOut > 1 ) && ( debugOut & 1 ) )
+                {
+                    std::cerr << std::endl << "READ " << message << std::endl;
+                }
                 if ( message.size() > 0 )
                 {
                     if ( message.back() == '\r' )
@@ -449,29 +465,40 @@ int zmqWrite::stream2zmq
                         message.back() = 0;
                     }
 
-                    if ( ( zmqExitString.size() > 0 ) && ( message == zmqExitString ) )
+                    if ( ( exitString.size() > 0 ) && ( message == exitString ) )
                     {
                         running = false;
                     }
 
-                    try
+                    if ( running || outputExitString )
                     {
-                        zmqWriteMessage( message );
-                    }
-                    catch ( zmq::error_t &e )
-                    {
-                        running = false;
-                    }
+                        if ( ( debugOut > 1 ) && ( ( debugOut & 1 ) == 0 ) )
+                        {
+                            std::cerr << "SEND " << message << std::endl;
+                        }
+                        try
+                        {
+                            zmqWriteMessage( message );
+                        }
+                        catch ( zmq::error_t &e )
+                        {
+                            running = false;
+                        }
 
-                    if ( pause > 0 )
-                    {
-                        msleep( pause );
+                        if ( pause > 0 )
+                        {
+                            msleep( pause );
+                        }
                     }
                 }
             }
         }
     }
 
+    if ( debugOut > 1 )
+    {
+        std::cerr << std::endl << "EXIT" << std::endl;
+    }
     return errorCode;
 }
 

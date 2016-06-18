@@ -19,6 +19,7 @@
 
 #include <am_constants.h>
 #include <am_string.h>
+#include <am_util.h>
 
 #include "connect_util.h"
 #include "zmq_constants.h"
@@ -77,7 +78,7 @@ static void help
     std::cout << std::endl;
     std::cout << "        Write to IP address <ip_address>.";
     std::cout << std::endl;
-    std::cout << "    Default: <ip_address> = \"";
+    std::cout << "        Default: <ip_address> = \"";
     std::cout << C_DEFAULT_ZMQ_IP_ADDRESS;
     std::cout << "\".";
     std::cout << std::endl;
@@ -143,6 +144,12 @@ static void help
     std::cout << std::endl;
 
     std::cout << std::endl;
+    std::cout << "    -X";
+    std::cout << std::endl;
+    std::cout << "        Output exit string (if defined)";
+    std::cout << std::endl;
+
+    std::cout << std::endl;
     std::cout << "    -x <exit_string>";
     std::cout << std::endl;
     std::cout << "        Exit the program when the string <exit_string> has been read:";
@@ -156,27 +163,28 @@ int main
     char *argv[]
 )
 {
-    amTimeStampMode timeStampMode = KEEP_AS_IS;
-    bool            running       = true;
-    bool            diagnostics   = false;
-    bool            debugOut      = false;
-    int             errorCode     = 0;
-    int             result        = 0;
-    int             portNo        = -1;
-    int             waitTime      = C_ZMQ_WAIT;
-    int             option        = 0;
-    int             pause         = 0;
-    size_t          timePrecision = C_TIME_PRECISION;
-    size_t          zmqBufferSize = C_ZMQ_BUFFER_SIZE;
-    amString        argument      = "";
-    amString        errorMessage  = "";
-    amString        zmqExitString = "";
-    amString        ipAddress     = C_DEFAULT_ZMQ_IP_ADDRESS;
-    amString        label         = "";
+    amTimeStampMode timeStampMode    = KEEP_AS_IS;
+    bool            running          = true;
+    bool            diagnostics      = false;
+    bool            debugOut         = false;
+    bool            outputExitString = false;
+    int             errorCode        = 0;
+    int             result           = 0;
+    int             portNo           = -1;
+    int             waitTime         = C_ZMQ_WAIT;
+    int             option           = 0;
+    int             pause            = 0;
+    size_t          timePrecision    = C_TIME_PRECISION;
+    size_t          zmqBufferSize    = C_ZMQ_BUFFER_SIZE;
+    amString        argument         = "";
+    amString        errorMessage     = "";
+    amString        exitString       = "";
+    amString        ipAddress        = C_DEFAULT_ZMQ_IP_ADDRESS;
+    amString        label            = "";
 
     opterr = 0;
 
-    const char optionString[] = "bB:dDhi:l:p:P:t:T:vVw:x:";
+    const char optionString[] = "bB:dDhi:l:p:P:t:T:vVw:Xx:";
 
     while ( running && ( option = getopt( argc, argv, optionString ) ) != -1 )
     {
@@ -303,8 +311,11 @@ int main
                     waitTime = 0;
                 }
                 break;
+            case 'X':
+                outputExitString = true;
+                break;
             case 'x':
-                zmqExitString = optarg;
+                exitString = optarg;
                 break;
             case '?':
                 errorCode = E_UNKNOWN_OPTION;
@@ -319,25 +330,55 @@ int main
         }
     }
 
-    if ( running )
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( ipAddress.empty() )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: No IP Address.\n";
+        }
+        else if ( !isIPAddress( ipAddress ) )
+        {
+            errorCode = E_MC_NO_IP_ADDRESS;
+            errorMessage += "\nError: IP Address \"";
+            errorMessage += ipAddress;
+            errorMessage += "\" is not a valid IP Address.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
+    {
+        if ( !isPortNumber( portNo ) )
+        {
+            errorCode = E_MC_NO_PORT_NUMBER;
+            errorMessage += "\nError: No valid port number.\n";
+        }
+    }
+
+    if ( running && ( errorCode == 0 ) )
     {
         zmqWrite zmqWriter( ipAddress, portNo, waitTime );
 
         errorCode = zmqWriter.getErrorCode();
         if ( zmqWriter.getErrorCode() == 0 )
         {
+            if ( exitString.size() > 0 )
+            {
+                zmqWriter.setExitString( exitString );
+                zmqWriter.setOutputExitString( outputExitString );
+            }
             zmqWriter.setTimeStampMode( timeStampMode );
             zmqWriter.setDebugOut( debugOut );
-            zmqWriter.setZMQExitString( zmqExitString );
             zmqWriter.setDiagnostics( diagnostics );
             zmqWriter.setPause( pause );
             zmqWriter.setTimePrecision( timePrecision );
             zmqWriter.setZMQBufferSize( zmqBufferSize );
+
             zmqWriter.stream2zmq( std::cin );
 
-            errorMessage += zmqWriter.getErrorMessage();
-            errorCode     = zmqWriter.getErrorCode();
+            errorCode = zmqWriter.getErrorCode();
         }
+        errorMessage += zmqWriter.getErrorMessage();
     }
 
     result = outputConnectError( C_PROGRAM_NAME, errorMessage, errorCode, argument );

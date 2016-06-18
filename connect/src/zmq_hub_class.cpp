@@ -359,7 +359,7 @@ int zmqHub::run
             if ( strlen( ( const char * ) message.data() ) > 0 )
             {
                 // Don't send empty messages
-                if ( ( zmqExitString.size() > 0 ) && ( zmqExitString == ( const char * ) message.data() ) )
+                if ( ( exitString.size() > 0 ) && ( exitString == ( const char * ) message.data() ) )
                 {
                     running = false;
                 }

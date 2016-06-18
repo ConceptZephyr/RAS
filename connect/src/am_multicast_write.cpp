@@ -1,4 +1,6 @@
 #include <unistd.h>
+#include <fcntl.h>
+#include <netdb.h>
 #include <arpa/inet.h>
 
 #include <iostream>
@@ -107,17 +109,19 @@ int amMulticastWrite::connect
     void
 )
 {
-    if ( !ipAddress.empty() )
+    if ( !isMulticastIPAddress( ipAddress ) )
     {   
         errorCode     = E_MC_NO_IP_ADDRESS;
         errorMessage += "Creating multicast connection for writing failed. No IP Address.\n";
     }   
-    else if ( portNo <= 0 ) 
+
+    if ( ( errorCode == 0 ) && !isPortNumber( portNo ) )
     {   
         errorCode     = E_MC_NO_PORT_NUMBER;
         errorMessage += "Creating multicast connection for writing failed. No Port Number.\n";
     }   
-    else
+
+    if ( errorCode == 0 )
     {   
         socketID = socket( AF_INET, SOCK_DGRAM, 0 );
         if ( socketID < 0 )
@@ -143,8 +147,8 @@ int amMulticastWrite::stream2mc
     std::istream &inStream
 )
 {
-    amString      message;
-    bool          running = true;
+    amString message;
+    bool     running = true;
 
     if ( ( errorCode == 0 ) && !connectionUp )
     {
@@ -168,6 +172,10 @@ int amMulticastWrite::stream2mc
             if ( inStream.eof() || inStream.fail() )
             {
                 running = false;
+                if ( ( exitString.size() > 0 ) && outputExitString )
+                {
+                    write( exitString , exitString .size() );
+                }
             }
             else
             {
@@ -184,14 +192,17 @@ int amMulticastWrite::stream2mc
                         running = false;
                     }
 
-                    write( message, message.size() );
-                    if ( errorCode != 0 )
+                    if ( running || outputExitString )
                     {
-                        running = false;
-                    }
-                    if ( pause > 0 )
-                    {
-                        msleep( pause );
+                        write( message, message.size() );
+                        if ( errorCode != 0 )
+                        {
+                            running = false;
+                        }
+                        if ( pause > 0 )
+                        {
+                            msleep( pause );
+                        }
                     }
                 }
             }

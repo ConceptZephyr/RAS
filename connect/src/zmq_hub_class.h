@@ -36,8 +36,8 @@ class zmqHub
         int zmqClose( void );
         int run( void );
     
-        void setZMQExitString( const amString &value ) { zmqExitString = value; }
-        amString getZMQExitString( void ) const { return zmqExitString; }
+        void setExitString( const amString &value ) { exitString = value; }
+        amString getExitString( void ) const { return exitString; }
 
         void setErrorCode( int value ) { errorCode = value; }
         int getErrorCode( void ) const { return errorCode; }
@@ -67,7 +67,7 @@ class zmqHub
         zmq::socket_t  *inSocketPtr;
         zmq::socket_t  *outSocketPtr;
 
-        amString zmqExitString;
+        amString exitString;
         amString errorMessage;
         int      errorCode;
         int      pause;
